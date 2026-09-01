@@ -1,12 +1,9 @@
-export default {
-  fetch(request) {
-    const url = new URL(request.url);
+import { Hono } from 'hono'
 
-    if (url.pathname.startsWith("/api/")) {
-      return Response.json({
-        name: "Cloudflare",
-      });
-    }
-		return new Response(null, { status: 404 });
-  },
-} satisfies ExportedHandler<Env>;
+type Bindings = { DB?: D1Database }
+const app = new Hono<{ Bindings: Bindings }>()
+
+app.get('/api/health', (c) => c.json({ status: 'ok' }))
+app.notFound((c) => c.json({ error: 'Not found' }, 404))
+
+export default app

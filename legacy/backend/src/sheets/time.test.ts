@@ -1,0 +1,112 @@
+import { describe, it, expect } from 'vitest';
+import {
+  MS_PER_DAY,
+  TAB_NAME_MAX_LENGTH,
+  dayIndexWithinWeek,
+  describeUtcInstant,
+  formatTabName,
+  formatWeekLabel,
+  hhMmToMs,
+  utcDayForGridIndex,
+  weekMondayIst,
+} from './time.js';
+
+describe('weekMondayIst', () => {
+  it('maps a Sunday to the Monday of its week', () => {
+    // Sunday 2026-08-16 15:30 UTC
+    const sunday = Date.UTC(2026, 7, 16, 15, 30, 0);
+    expect(weekMondayIst(sunday)).toBe(Date.UTC(2026, 7, 9, 18, 30));
+  });
+
+  it('returns the same day for a Monday', () => {
+    const monday = Date.UTC(2026, 7, 10, 8, 0, 0);
+    expect(weekMondayIst(monday)).toBe(Date.UTC(2026, 7, 9, 18, 30));
+  });
+
+  it('maps a mid-week day to the start of its week', () => {
+    // Wednesday 2026-08-12
+    expect(weekMondayIst(Date.UTC(2026, 7, 12, 0, 0, 0))).toBe(Date.UTC(2026, 7, 9, 18, 30));
+  });
+
+  it('handles a week crossing a month boundary', () => {
+    // Thursday 2026-10-01 -> Monday 2026-09-28
+    expect(weekMondayIst(Date.UTC(2026, 9, 1, 12, 0, 0))).toBe(Date.UTC(2026, 8, 27, 18, 30));
+  });
+
+  it('handles a week crossing a year boundary', () => {
+    // Thursday 2026-01-01 -> Monday 2025-12-29
+    expect(weekMondayIst(Date.UTC(2026, 0, 1, 12, 0, 0))).toBe(Date.UTC(2025, 11, 28, 18, 30));
+  });
+});
+
+describe('formatWeekLabel / formatTabName', () => {
+  it('produces the deterministic weekly tab name', () => {
+    expect(formatWeekLabel(Date.UTC(2026, 7, 9, 18, 30))).toBe('Week of 2026-08-10');
+  });
+
+  it('appends an admin prefix while keeping determinism', () => {
+    const monday = Date.UTC(2026, 7, 9, 18, 30);
+    expect(formatTabName(null, monday)).toBe('Week of 2026-08-10');
+    expect(formatTabName('', monday)).toBe('Week of 2026-08-10');
+    expect(formatTabName('ACM Studio', monday)).toBe('ACM Studio - Week of 2026-08-10');
+    expect(formatTabName('  ACM Studio  ', monday)).toBe('ACM Studio - Week of 2026-08-10');
+  });
+
+  it('strips characters Google forbids in tab names', () => {
+    const monday = Date.UTC(2026, 7, 9, 18, 30);
+    expect(formatTabName('R&B [Live]', monday)).toBe('R&B Live - Week of 2026-08-10');
+    expect(formatTabName('Hall 1 / North', monday)).toBe('Hall 1  North - Week of 2026-08-10');
+    expect(formatTabName('A?B*C', monday)).toBe('ABC - Week of 2026-08-10');
+  });
+
+  it('keeps embedded quotes but strips leading/trailing ones', () => {
+    const monday = Date.UTC(2026, 7, 9, 18, 30);
+    expect(formatTabName("O'Brien", monday)).toBe("O'Brien - Week of 2026-08-10");
+    expect(formatTabName("'Studio'", monday)).toBe('Studio - Week of 2026-08-10');
+  });
+
+  it('clamps the total tab name to 100 characters', () => {
+    const monday = Date.UTC(2026, 7, 9, 18, 30);
+    const name = formatTabName('x'.repeat(80), monday);
+    expect(name.length).toBeLessThanOrEqual(TAB_NAME_MAX_LENGTH);
+    expect(name.endsWith('- Week of 2026-08-10')).toBe(true);
+  });
+});
+
+describe('day helpers', () => {
+  it('maps UTC days to a Monday-first week grid', () => {
+    expect(dayIndexWithinWeek(1)).toBe(0); // Monday
+    expect(dayIndexWithinWeek(0)).toBe(6); // Sunday
+    expect(dayIndexWithinWeek(5)).toBe(4); // Saturday
+  });
+
+  it('round-trips between grid index and UTC day', () => {
+    for (let i = 0; i < 7; i++) {
+      expect(dayIndexWithinWeek(utcDayForGridIndex(i))).toBe(i);
+    }
+  });
+
+  it('parses HH:MM to milliseconds of day', () => {
+    expect(hhMmToMs('09:00')).toBe(9 * 60 * 60 * 1000);
+    expect(hhMmToMs('23:30')).toBe(23 * 60 * 60 * 1000 + 30 * 60 * 1000);
+  });
+});
+
+describe('describeUtcInstant', () => {
+  it('reports Sunday 15:30 UTC as Sunday 21:00 IST (UTC+5:30)', () => {
+    // Sunday 2026-08-16 15:30 UTC
+    const labels = describeUtcInstant(Date.UTC(2026, 7, 16, 15, 30, 0));
+    expect(labels.utc).toBe('2026-08-16 15:30:00');
+    expect(labels.ist).toBe('2026-08-16 21:00:00');
+  });
+
+  it('shifts the IST label across midnight', () => {
+    // Sunday 2026-08-16 23:00 UTC -> Monday 2026-08-17 04:30 IST
+    const labels = describeUtcInstant(Date.UTC(2026, 7, 16, 23, 0, 0));
+    expect(labels.ist).toBe('2026-08-17 04:30:00');
+  });
+
+  it('matches the 7-day week constant', () => {
+    expect(MS_PER_DAY).toBe(24 * 60 * 60 * 1000);
+  });
+});
