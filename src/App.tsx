@@ -1,148 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import cloudflareLogo from './assets/cloudflare.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-  const [name, setName] = useState('unknown')
+type View = 'booking' | 'requests' | 'admin'
+const rows = [['09:00 – 10:00', 'Available', 'Choir', 'Available'], ['10:00 – 11:00', 'Natyarpana', 'Available', 'Available']]
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started with Cloudflare</h1>
-          <p>
-            Edit <code>src/App.tsx</code> or <code>worker/index.ts</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <ul style={{ display: 'flex', gap: '1rem', listStyle: 'none', padding: 0 }}>
-          <li>
-            <button
-              className="counter"
-              onClick={() => setCount((count) => count + 1)}
-            >
-              Count is {count}
-            </button>
-          </li>
-          <li>
-          <button
-            className="counter"
-            onClick={() => {
-              fetch('/api/')
-                .then((res) => res.json())
-                .then((data) => setName(data.name))
-            }}
-            aria-label='get name'
-          >
-            Name from API is: {name}
-          </button>
-          </li>
-        </ul>
-
-
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-            <li>
-              <a href="https://workers.cloudflare.com/" target="_blank">
-                <img className="button-icon" src={cloudflareLogo} alt="" />
-                Workers Docs
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+export default function App() {
+  const [view, setView] = useState<View>('booking')
+  const [compact, setCompact] = useState(() => window.innerWidth <= 640)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [status, setStatus] = useState('Checking…')
+  useEffect(() => { const update = () => setCompact(window.innerWidth <= 640); window.addEventListener('resize', update); return () => window.removeEventListener('resize', update) }, [])
+  useEffect(() => { fetch('/api/health').then(r => setStatus(r.ok ? 'Online' : 'Unavailable')).catch(() => setStatus('Unavailable')) }, [])
+  const select = (next: View) => { setView(next); setMenuOpen(false) }
+  const nav = <>{(['booking', 'requests', 'admin'] as View[]).map(item => <button key={item} onClick={() => select(item)}>{item}</button>)}</>
+  return <main className="app-shell"><header><button className="brand" onClick={() => select('booking')}>Jamroom <b>CKC</b></button>{compact ? <><button className="menu" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>☰</button>{menuOpen && <nav className="mobile-nav">{nav}</nav>}</> : <nav>{nav}</nav>}</header><section className="heading"><small>Music room management</small><h1>{view === 'booking' ? 'Book a room' : view === 'requests' ? 'Your requests' : 'Administration'}</h1><p>API: {status}</p></section>{view === 'booking' && (compact ? <div className="cards">{rows.map(row => <article key={row[0]}><h2>{row[0]}</h2>{['Mon', 'Tue', 'Wed'].map((day, index) => <button className={row[index + 1] === 'Available' ? 'available' : 'booked'} key={day}>{day}: {row[index + 1]}</button>)}</article>)}</div> : <div className="table"><table><thead><tr><th>Time</th><th>Mon</th><th>Tue</th><th>Wed</th></tr></thead><tbody>{rows.map(row => <tr key={row[0]}>{row.map((value, index) => index ? <td key={value}>{value}</td> : <th key={value}>{value}</th>)}</tr>)}</tbody></table></div>)}{view !== 'booking' && <article className="panel">Original feature source is preserved in <code>legacy/</code> and ready for native Hono/React conversion.</article>}</main>
 }
-
-export default App
