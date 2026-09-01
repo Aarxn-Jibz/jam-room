@@ -12,6 +12,12 @@
 		"not_found_handling": "single-page-application",
 		"run_worker_first": ["/api/*"]
 	},
+	"d1_databases": [{
+		"binding": "DB",
+		"database_name": "jamroom-db",
+		"database_id": "6cdf2b32-7542-43d6-a3dd-ed4415e5a182",
+		"migrations_dir": "drizzle"
+	}],
 	"observability": {
 		"enabled": true
 	},
