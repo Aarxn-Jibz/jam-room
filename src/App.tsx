@@ -4,6 +4,7 @@ import { AuthModal } from './components/AuthModal'
 import { RequestsScreen } from './components/RequestsScreen'
 import { DashboardScreen } from './components/DashboardScreen'
 import { RegisterScreen } from './components/RegisterScreen'
+import { BookingRequestModal } from './components/BookingRequestModal'
 
 type Page = 'booking' | 'requests' | 'dashboard' | 'register'
 type Room = { id: string; number: number; name?: string }
@@ -21,6 +22,7 @@ export default function App() {
   const [slots, setSlots] = useState<SlotConfig[]>(fallbackSlots); const [bookings, setBookings] = useState<Booking[]>([])
   const [week, setWeek] = useState(() => mondayOf(new Date())); const [loading, setLoading] = useState(true)
   const [notice, setNotice] = useState<string | null>(null); const [user, setUser] = useState<SessionUser | null>(null); const [loginOpen, setLoginOpen] = useState(false)
+  const [selection, setSelection] = useState<{ date: Date; slot: SlotConfig } | null>(null)
   useEffect(() => { fetch('/api/auth/me').then(response => response.ok ? response.json() : null).then((data: SessionUser | null) => setUser(data)).catch(() => undefined) }, [])
   useEffect(() => { Promise.all([fetch('/api/rooms'), fetch('/api/slotconfig')]).then(async ([roomResponse, slotResponse]) => {
     if (roomResponse.ok) { const loaded = await roomResponse.json() as Room[]; setRooms(loaded); if (loaded.length) setRoomNumber(loaded[0].number) }
@@ -31,7 +33,7 @@ export default function App() {
   const setView = (next: Page) => { setPage(next); setMenuOpen(false) }
   const bookingAt = (day: Date, slot: SlotConfig) => bookings.find(booking => { const start = new Date(booking.slot_start); return dateKey(start) === dateKey(day) && start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }) === slot.start_time.slice(0, 5) })
   const logout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); setUser(null); setView('booking') }
-  const selectSlot = (booking: Booking | undefined) => { if (booking) return setNotice(`${booking.band_name ?? 'This room'} has already booked this slot.`); if (!user) setLoginOpen(true); else setNotice('Booking submission is being connected to the remaining request form.') }
+  const selectSlot = (day: Date, slot: SlotConfig, booking: Booking | undefined) => { if (booking) return setNotice(`${booking.band_name ?? 'This room'} has already booked this slot.`); if (!user) setLoginOpen(true); else setSelection({ date: day, slot }) }
   return <div className="app">
     <header className="site-header">
       <button className="identity" onClick={() => setView('booking')} aria-label="Jamroom home"><span className="identity-mark">J</span><span>JAMROOM</span></button>
@@ -49,10 +51,11 @@ export default function App() {
         <div className="schedule-toolbar"><label>ROOM <select value={roomNumber} onChange={event => setRoomNumber(Number(event.target.value))}>{rooms.length ? rooms.map(room => <option key={room.id} value={room.number}>Room {room.number}{room.name ? ` — ${room.name}` : ''}</option>) : <option value="365">Room 365</option>}</select></label>
           <div className="week-controls"><button onClick={() => setWeek(mondayOf(new Date()))}>Today</button><button aria-label="Previous week" onClick={() => setWeek(current => new Date(current.getFullYear(), current.getMonth(), current.getDate() - 7))}>‹</button><span>{week.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {days[6].toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span><button aria-label="Next week" onClick={() => setWeek(current => new Date(current.getFullYear(), current.getMonth(), current.getDate() + 7))}>›</button></div>
         </div>
-        <div className="schedule-wrap" aria-busy={loading}>{loading && <div className="loading-line" />}<table className="schedule"><thead><tr><th>TIME</th>{days.map(day => <th key={day.toISOString()}><span>{day.toLocaleDateString('en-IN', { weekday: 'short' })}</span><b>{day.getDate()}</b></th>)}</tr></thead><tbody>{slots.map(slot => <tr key={slot.id}><th><b>{labelTime(slot.start_time)}</b><span>{labelTime(slot.end_time)}</span></th>{days.map(day => { const booking = bookingAt(day, slot); return <td key={`${slot.id}-${day.toISOString()}`}><button className={booking ? 'slot slot--booked' : 'slot'} onClick={() => selectSlot(booking)}>{booking ? (booking.band_name ?? 'Booked') : <><span>Available</span><em>Request slot</em></>}</button></td> })}</tr>)}</tbody></table></div>
+        <div className="schedule-wrap" aria-busy={loading}>{loading && <div className="loading-line" />}<table className="schedule"><thead><tr><th>TIME</th>{days.map(day => <th key={day.toISOString()}><span>{day.toLocaleDateString('en-IN', { weekday: 'short' })}</span><b>{day.getDate()}</b></th>)}</tr></thead><tbody>{slots.map(slot => <tr key={slot.id}><th><b>{labelTime(slot.start_time)}</b><span>{labelTime(slot.end_time)}</span></th>{days.map(day => { const booking = bookingAt(day, slot); return <td key={`${slot.id}-${day.toISOString()}`}><button className={booking ? 'slot slot--booked' : 'slot'} onClick={() => selectSlot(day, slot, booking)}>{booking ? (booking.band_name ?? 'Booked') : <><span>Available</span><em>Request slot</em></>}</button></td> })}</tr>)}</tbody></table></div>
         <footer className="schedule-footer"><span><i className="legend available" /> Available</span><span><i className="legend booked" /> Reserved</span><span>Room {roomNumber} · Select an available slot to request it</span></footer>
       </section>
     </section> : page === 'requests' ? <RequestsScreen signedIn={Boolean(user)} /> : page === 'dashboard' ? <DashboardScreen admin={user?.role === 'admin'} /> : <RegisterScreen admin={user?.role === 'admin'} />}</main>
     <AuthModal open={loginOpen} onClose={() => setLoginOpen(false)} onSuccess={setUser} />
+    <BookingRequestModal open={Boolean(selection)} onClose={() => setSelection(null)} date={selection?.date ?? null} startTime={selection?.slot.start_time ?? ''} endTime={selection?.slot.end_time ?? ''} roomId={rooms.find(room => room.number === roomNumber)?.id} user={user} onCreated={() => { setNotice('Your booking request was submitted.'); setWeek(new Date(week)) }} />
   </div>
 }
