@@ -18,6 +18,9 @@
 		"database_id": "6cdf2b32-7542-43d6-a3dd-ed4415e5a182",
 		"migrations_dir": "drizzle"
 	}],
+	"triggers": {
+		"crons": ["30 15 * * 0"]
+	},
 	"observability": {
 		"enabled": true
 	},
