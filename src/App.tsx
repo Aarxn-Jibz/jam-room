@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { AuthModal } from './components/AuthModal'
+import { RequestsScreen } from './components/RequestsScreen'
+import { DashboardScreen } from './components/DashboardScreen'
+import { RegisterScreen } from './components/RegisterScreen'
 
 type Page = 'booking' | 'requests' | 'dashboard' | 'register'
 type Room = { id: string; number: number; name?: string }
@@ -49,7 +52,7 @@ export default function App() {
         <div className="schedule-wrap" aria-busy={loading}>{loading && <div className="loading-line" />}<table className="schedule"><thead><tr><th>TIME</th>{days.map(day => <th key={day.toISOString()}><span>{day.toLocaleDateString('en-IN', { weekday: 'short' })}</span><b>{day.getDate()}</b></th>)}</tr></thead><tbody>{slots.map(slot => <tr key={slot.id}><th><b>{labelTime(slot.start_time)}</b><span>{labelTime(slot.end_time)}</span></th>{days.map(day => { const booking = bookingAt(day, slot); return <td key={`${slot.id}-${day.toISOString()}`}><button className={booking ? 'slot slot--booked' : 'slot'} onClick={() => selectSlot(booking)}>{booking ? (booking.band_name ?? 'Booked') : <><span>Available</span><em>Request slot</em></>}</button></td> })}</tr>)}</tbody></table></div>
         <footer className="schedule-footer"><span><i className="legend available" /> Available</span><span><i className="legend booked" /> Reserved</span><span>Room {roomNumber} · Select an available slot to request it</span></footer>
       </section>
-    </section> : <section className="coming-soon"><div className="eyebrow">JAMROOM</div><h1>{page === 'requests' ? 'Slot Requests' : page === 'dashboard' ? 'Dashboard' : 'Register'}</h1><p>This screen is next in the native React port. Its legacy source remains safely available while the Worker routes are consolidated.</p><button onClick={() => setView('booking')}>Back to booking</button></section>}</main>
+    </section> : page === 'requests' ? <RequestsScreen signedIn={Boolean(user)} /> : page === 'dashboard' ? <DashboardScreen admin={user?.role === 'admin'} /> : <RegisterScreen admin={user?.role === 'admin'} />}</main>
     <AuthModal open={loginOpen} onClose={() => setLoginOpen(false)} onSuccess={setUser} />
   </div>
 }
