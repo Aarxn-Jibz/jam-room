@@ -20,6 +20,16 @@ bun run deploy
 
 `wrangler.jsonc` defines the Worker assets and D1 binding. The Worker runs first for `/api/*`; all other paths are served from the Vite build with SPA fallback.
 
+## Worker secrets
+
+Configure these with `wrangler secret put` before deploying integrations:
+
+- `JWT_SECRET` (at least 32 characters)
+- `GOOGLE_SERVICE_ACCOUNT` (the full service-account JSON for weekly Sheets export)
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASSWORD` (booking notifications; use an SMTP service compatible with AUTH LOGIN)
+
+The weekly Sheets export runs at 21:00 Asia/Kolkata each Sunday and can also be run by an administrator from Dashboard. Notifications are best-effort: a mail failure is recorded in audit logs and never reverses a booking action.
+
 ## Migration status
 
 The original application source is retained in `legacy/` as a porting reference. New application code belongs in `src/` and `worker/`; it should use React, Bun, Hono, and the single Worker deployment described above.

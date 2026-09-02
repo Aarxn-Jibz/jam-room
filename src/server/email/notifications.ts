@@ -1,0 +1,11 @@
+import { eq } from 'drizzle-orm'
+import { getDb, schema } from '../db/client.js'
+import { sendSmtp, type SmtpConfig } from './smtp.js'
+import { createSmtpTransport } from './transport.js'
+
+type Bindings = { SMTP_HOST?: string; SMTP_PORT?: string; SMTP_USER?: string; SMTP_PASSWORD?: string }
+type BookingEvent = { kind: 'created' | 'approved' | 'denied'; id: string; status: string; roomId: string; userName: string; bandName: string; start: number; end: number; reason: string | null }
+const config = (env: Bindings): SmtpConfig | null => { const port = Number(env.SMTP_PORT); return env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD && Number.isInteger(port) ? { host: env.SMTP_HOST, port, username: env.SMTP_USER, password: env.SMTP_PASSWORD, from: env.SMTP_USER, secure: port === 465 } : null }
+export async function notifyBooking(db: ReturnType<typeof getDb>, env: Bindings, event: BookingEvent) {
+  try { const recipient = (await db.select({ email: schema.systemSettings.notificationEmail }).from(schema.systemSettings).limit(1))[0]?.email; const smtp = config(env); if (!recipient || !smtp) return; const room = (await db.select({ name: schema.rooms.name }).from(schema.rooms).where(eq(schema.rooms.id, event.roomId)).limit(1))[0]?.name ?? event.roomId; const label = event.kind === 'created' ? 'New booking request' : event.kind === 'approved' ? 'Booking approved' : 'Booking rejected'; const range = `${new Date(event.start).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} – ${new Date(event.end).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}`; await sendSmtp(smtp, { to: recipient, subject: `${label}: ${event.bandName}`, body: [label, '', `Booking ID: ${event.id}`, `Status: ${event.status}`, `Profile: ${event.bandName}`, `Room: ${room}`, `Slot: ${range}`, `Requested by: ${event.userName}`, event.reason ? `Reason: ${event.reason}` : ''].filter(Boolean).join('\n') }, createSmtpTransport(smtp)) } catch (error) { await db.insert(schema.auditLogs).values({ id: crypto.randomUUID(), actorId: null, action: 'EMAIL_FAILED', targetType: 'BOOKING', targetId: event.id, metadata: JSON.stringify({ kind: event.kind, error: error instanceof Error ? error.message : 'Unknown error' }), createdAt: Date.now() }).catch(() => undefined) }
+}

@@ -3,8 +3,9 @@ import { Hono } from 'hono'
 import { createRequestSchema, updateRequestSchema } from '../schemas.js'
 import { getDb, schema } from '../db/client.js'
 import { authenticated } from './auth.js'
+import { notifyBooking } from '../email/notifications.js'
 
-type Bindings = { DB: D1Database; JWT_SECRET?: string }
+type Bindings = { DB: D1Database; JWT_SECRET?: string; SMTP_HOST?: string; SMTP_PORT?: string; SMTP_USER?: string; SMTP_PASSWORD?: string }
 const requestRoutes = new Hono<{ Bindings: Bindings }>()
 const activeStatuses = ['PENDING', 'APPROVED'] as const
 const apiStatus = (status: string) => status === 'APPROVED' ? 'approved' : status === 'PENDING' ? 'pending' : 'denied'
@@ -41,7 +42,7 @@ requestRoutes.post('/requests', async c => {
   if (!configured) return c.json({ message: 'Slot is not available for booking' }, 400)
   const conflict = (await db.select({ id: schema.bookings.id, band: schema.profiles.name }).from(schema.bookings).innerJoin(schema.profiles, eq(schema.bookings.profileId, schema.profiles.id)).where(and(eq(schema.bookings.roomId, room.id), inArray(schema.bookings.status, activeStatuses), lt(schema.bookings.startTime, end), gt(schema.bookings.endTime, start))).limit(1))[0]
   if (conflict) return c.json({ message: `This time slot is already booked by ${conflict.band}.`, band_name: conflict.band }, 409)
-  const id = crypto.randomUUID(); const now = Date.now(); await db.insert(schema.bookings).values({ id, roomId: room.id, profileId: input.band_id, userId: input.user_id, startTime: start, endTime: end, status: 'PENDING', reason: input.reason ?? null, createdAt: now }); await audit(db, auth.user.id, 'CREATE_BOOKING', id, { roomId: room.id, profileId: input.band_id, startTime: start, endTime: end }); return c.json(await serialize(db, id), 201)
+  const id = crypto.randomUUID(); const now = Date.now(); await db.insert(schema.bookings).values({ id, roomId: room.id, profileId: input.band_id, userId: input.user_id, startTime: start, endTime: end, status: 'PENDING', reason: input.reason ?? null, createdAt: now }); await audit(db, auth.user.id, 'CREATE_BOOKING', id, { roomId: room.id, profileId: input.band_id, startTime: start, endTime: end }); const created = await serialize(db, id); if (created) void notifyBooking(db, c.env, { kind: 'created', id, status: created.status, roomId: created.room_id, userName: created.user_name, bandName: created.band_name, start, end, reason: created.reason }); return c.json(created, 201)
 })
 
 requestRoutes.put('/requests', async c => {
@@ -61,7 +62,7 @@ requestRoutes.put('/requests', async c => {
     const conflict = (await db.select({ id: schema.bookings.id }).from(schema.bookings).where(and(eq(schema.bookings.roomId, roomId), inArray(schema.bookings.status, activeStatuses), lt(schema.bookings.startTime, end), gt(schema.bookings.endTime, start))).limit(10)).some(row => row.id !== id)
     if (conflict) return c.json({ message: 'This time slot is already booked.' }, 409)
   }
-  await db.update(schema.bookings).set({ reason: data.reason ?? booking.reason, ...(changingSlot ? { roomId, profileId, startTime: start, endTime: end } : {}), ...(auth.user.role === 'ADMIN' && data.status ? { status: data.status === 'approved' ? 'APPROVED' : data.status === 'denied' ? 'REJECTED' : 'PENDING', approvedBy: data.status === 'approved' ? auth.user.id : null, approvedAt: data.status === 'approved' ? Date.now() : null } : {}) }).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'UPDATE_BOOKING', id, data); return c.json({ message: 'Request updated', request: await serialize(db, id) })
+  await db.update(schema.bookings).set({ reason: data.reason ?? booking.reason, ...(changingSlot ? { roomId, profileId, startTime: start, endTime: end } : {}), ...(auth.user.role === 'ADMIN' && data.status ? { status: data.status === 'approved' ? 'APPROVED' : data.status === 'denied' ? 'REJECTED' : 'PENDING', approvedBy: data.status === 'approved' ? auth.user.id : null, approvedAt: data.status === 'approved' ? Date.now() : null } : {}) }).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'UPDATE_BOOKING', id, data); const updated = await serialize(db, id); if (updated && data.status && data.status !== 'pending') void notifyBooking(db, c.env, { kind: data.status, id, status: updated.status, roomId: updated.room_id, userName: updated.user_name, bandName: updated.band_name, start: Date.parse(updated.slot_start), end: Date.parse(updated.slot_end), reason: updated.reason }); return c.json({ message: 'Request updated', request: updated })
 })
 
 requestRoutes.delete('/requests', async c => { const auth = await requireUser(c); if (!auth) return c.json({ error: 'Unauthorized' }, 401); const id = c.req.query('id'); if (!id) return c.json({ message: 'Missing request id' }, 400); const db = getDb(c.env.DB); const booking = (await db.select().from(schema.bookings).where(eq(schema.bookings.id, id)).limit(1))[0]; if (!booking) return c.json({ message: 'Request not found' }, 404); if (auth.user.role !== 'ADMIN' && booking.userId !== auth.user.id) return c.json({ message: 'Forbidden' }, 403); await db.delete(schema.bookings).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'DELETE_BOOKING', id, { roomId: booking.roomId }); return c.json({ success: true }) })

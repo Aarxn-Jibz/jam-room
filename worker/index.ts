@@ -5,8 +5,10 @@ import { requestRoutes } from '../src/server/routes/requests.js'
 import { managementRoutes } from '../src/server/routes/management.js'
 import { entryLogRoutes } from '../src/server/routes/entrylogs.js'
 import { sheetsRoutes } from '../src/server/routes/sheets.js'
+import { runWeeklyExport } from '../src/server/routes/sheets.js'
+import { getDb } from '../src/server/db/client.js'
 
-type Bindings = { DB?: D1Database; JWT_SECRET?: string }
+type Bindings = { DB?: D1Database; JWT_SECRET?: string; GOOGLE_SERVICE_ACCOUNT?: string; SMTP_HOST?: string; SMTP_PORT?: string; SMTP_USER?: string; SMTP_PASSWORD?: string }
 const app = new Hono<{ Bindings: Bindings }>()
 const windows = new Map<string, { count: number; resetAt: number }>()
 app.use('/api/*', async (c, next) => {
@@ -26,4 +28,9 @@ app.route('/api', sheetsRoutes)
 app.route('/api', publicRoutes)
 app.notFound((c) => c.json({ error: 'Not found' }, 404))
 
-export default app
+export default {
+  fetch: app.fetch,
+  scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+    if (env.DB) ctx.waitUntil(runWeeklyExport(getDb(env.DB), env))
+  },
+}
