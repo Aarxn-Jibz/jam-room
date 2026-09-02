@@ -9,7 +9,7 @@ const requestRoutes = new Hono<{ Bindings: Bindings }>()
 const activeStatuses = ['PENDING', 'APPROVED'] as const
 const apiStatus = (status: string) => status === 'APPROVED' ? 'approved' : status === 'PENDING' ? 'pending' : 'denied'
 
-async function requireUser(c: { env: Bindings; req: { header(name: string): string | undefined } }) { return authenticated(c) }
+async function requireUser(c: { env: Bindings; req: { header(name: string): string | undefined } }) { const auth = await authenticated(c); return auth && !auth.user.mustChangePassword ? auth : null }
 async function serialize(db: ReturnType<typeof getDb>, id: string) {
   const row = (await db.select({ id: schema.bookings.id, user_id: schema.bookings.userId, room_id: schema.bookings.roomId, status: schema.bookings.status, slot_start: schema.bookings.startTime, slot_end: schema.bookings.endTime, request_date: schema.bookings.createdAt, response_date: schema.bookings.approvedAt, reason: schema.bookings.reason, user_name: schema.users.name, band_name: schema.profiles.name }).from(schema.bookings).innerJoin(schema.users, eq(schema.bookings.userId, schema.users.id)).innerJoin(schema.profiles, eq(schema.bookings.profileId, schema.profiles.id)).where(eq(schema.bookings.id, id)).limit(1))[0]
   return row && { ...row, status: apiStatus(row.status), slot_start: new Date(row.slot_start).toISOString(), slot_end: new Date(row.slot_end).toISOString(), request_date: new Date(row.request_date).toISOString(), response_date: row.response_date ? new Date(row.response_date).toISOString() : null }
