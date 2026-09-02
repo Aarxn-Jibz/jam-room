@@ -1,5 +1,7 @@
 export type Band = { id: string; name: string; colour: string }
 export type ManagedUser = { id: string; name: string; email: string; role: 'user' | 'admin'; bands: Pick<Band, 'id' | 'name'>[] }
+export type Room = { id: string; number: number; name?: string }
+export type BookingRequest = { id: string; status: 'pending' | 'approved' | 'denied'; slot_start: string; slot_end: string; band_name?: string; reason?: string; room_id: string; band_id?: string; user_name?: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, init)
@@ -22,4 +24,8 @@ export const api = {
   createBand: (body: { name: string; colour: string }) => request('/api/bands', json('POST', body)),
   updateBand: (id: string, body: { name: string; colour: string }) => request(`/api/bands?id=${encodeURIComponent(id)}`, json('PUT', body)),
   deleteBand: (id: string) => request(`/api/bands?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  rooms: () => request<Room[]>('/api/rooms'),
+  requests: (roomId?: string) => request<BookingRequest[]>(`/api/requests${roomId ? `?room_id=${encodeURIComponent(roomId)}` : ''}`),
+  updateRequest: (id: string, body: Record<string, string>) => request(`/api/requests?id=${encodeURIComponent(id)}`, json('PUT', body)),
+  deleteRequest: (id: string) => request(`/api/requests?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
 }
