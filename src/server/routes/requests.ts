@@ -49,7 +49,19 @@ requestRoutes.put('/requests', async c => {
   const parsed = updateRequestSchema.safeParse(await c.req.json().catch(() => ({}))); if (!parsed.success) return c.json({ message: 'Validation failed' }, 400); const db = getDb(c.env.DB); const booking = (await db.select().from(schema.bookings).where(eq(schema.bookings.id, id)).limit(1))[0]; if (!booking) return c.json({ message: 'Request not found' }, 404)
   if (auth.user.role !== 'ADMIN' && booking.userId !== auth.user.id) return c.json({ message: 'Forbidden' }, 403); const data = parsed.data
   if (auth.user.role !== 'ADMIN' && Object.keys(data).some(key => key !== 'reason')) return c.json({ message: 'Users may only edit their request reason' }, 403)
-  await db.update(schema.bookings).set({ reason: data.reason ?? booking.reason, ...(auth.user.role === 'ADMIN' && data.status ? { status: data.status === 'approved' ? 'APPROVED' : data.status === 'denied' ? 'REJECTED' : 'PENDING', approvedBy: data.status === 'approved' ? auth.user.id : null, approvedAt: data.status === 'approved' ? Date.now() : null } : {}) }).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'UPDATE_BOOKING', id, data); return c.json({ message: 'Request updated', request: await serialize(db, id) })
+  const changingSlot = data.room_id || data.band_id || data.slot_start || data.slot_end
+  if (changingSlot && auth.user.role !== 'ADMIN') return c.json({ message: 'Only administrators may change booking details' }, 403)
+  const roomId = data.room_id ?? booking.roomId; const profileId = data.band_id ?? booking.profileId
+  const start = data.slot_start ? Date.parse(data.slot_start) : booking.startTime; const end = data.slot_end ? Date.parse(data.slot_end) : booking.endTime
+  if (changingSlot) {
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || start <= Date.now()) return c.json({ message: 'Invalid future slot' }, 400)
+    const room = (await db.select().from(schema.rooms).where(and(eq(schema.rooms.id, roomId), eq(schema.rooms.active, true))).limit(1))[0]
+    const profile = (await db.select().from(schema.profiles).where(and(eq(schema.profiles.id, profileId), eq(schema.profiles.active, true))).limit(1))[0]
+    if (!room || !profile) return c.json({ message: 'Room or profile does not exist' }, 400)
+    const conflict = (await db.select({ id: schema.bookings.id }).from(schema.bookings).where(and(eq(schema.bookings.roomId, roomId), inArray(schema.bookings.status, activeStatuses), lt(schema.bookings.startTime, end), gt(schema.bookings.endTime, start))).limit(10)).some(row => row.id !== id)
+    if (conflict) return c.json({ message: 'This time slot is already booked.' }, 409)
+  }
+  await db.update(schema.bookings).set({ reason: data.reason ?? booking.reason, ...(changingSlot ? { roomId, profileId, startTime: start, endTime: end } : {}), ...(auth.user.role === 'ADMIN' && data.status ? { status: data.status === 'approved' ? 'APPROVED' : data.status === 'denied' ? 'REJECTED' : 'PENDING', approvedBy: data.status === 'approved' ? auth.user.id : null, approvedAt: data.status === 'approved' ? Date.now() : null } : {}) }).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'UPDATE_BOOKING', id, data); return c.json({ message: 'Request updated', request: await serialize(db, id) })
 })
 
 requestRoutes.delete('/requests', async c => { const auth = await requireUser(c); if (!auth) return c.json({ error: 'Unauthorized' }, 401); const id = c.req.query('id'); if (!id) return c.json({ message: 'Missing request id' }, 400); const db = getDb(c.env.DB); const booking = (await db.select().from(schema.bookings).where(eq(schema.bookings.id, id)).limit(1))[0]; if (!booking) return c.json({ message: 'Request not found' }, 404); if (auth.user.role !== 'ADMIN' && booking.userId !== auth.user.id) return c.json({ message: 'Forbidden' }, 403); await db.delete(schema.bookings).where(eq(schema.bookings.id, id)); await audit(db, auth.user.id, 'DELETE_BOOKING', id, { roomId: booking.roomId }); return c.json({ success: true }) })
