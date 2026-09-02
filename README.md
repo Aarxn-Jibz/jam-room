@@ -1,32 +1,25 @@
-# React + TypeScript + Vite
+# Jamroom
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Jamroom is a React/Vite room-booking app backed by a Hono API and Cloudflare D1.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+bun install
+bun run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The frontend calls relative `/api/*` URLs. During local development the Cloudflare Vite plugin serves the Worker alongside the app; in production, the deployed Worker serves the built frontend and handles `/api/*` itself. This keeps every browser request same-origin, so no CORS configuration is needed.
+
+## Build and deploy
+
+```bash
+bun run build
+bun run deploy
+```
+
+`wrangler.jsonc` defines the Worker assets and D1 binding. The Worker runs first for `/api/*`; all other paths are served from the Vite build with SPA fallback.
+
+## Migration status
+
+The original application source is retained in `legacy/` as a porting reference. New application code belongs in `src/` and `worker/`; it should use React, Bun, Hono, and the single Worker deployment described above.
