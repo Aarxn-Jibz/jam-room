@@ -4,6 +4,7 @@ import { authRoutes } from '../src/server/routes/auth.js'
 import { requestRoutes } from '../src/server/routes/requests.js'
 import { managementRoutes } from '../src/server/routes/management.js'
 import { entryLogRoutes } from '../src/server/routes/entrylogs.js'
+import { sheetsRoutes } from '../src/server/routes/sheets.js'
 
 type Bindings = { DB?: D1Database; JWT_SECRET?: string }
 const app = new Hono<{ Bindings: Bindings }>()
@@ -21,6 +22,7 @@ app.route('/api/auth', authRoutes)
 app.route('/api', requestRoutes)
 app.route('/api', managementRoutes)
 app.route('/api', entryLogRoutes)
+app.route('/api', sheetsRoutes)
 app.route('/api', publicRoutes)
 app.notFound((c) => c.json({ error: 'Not found' }, 404))
 
