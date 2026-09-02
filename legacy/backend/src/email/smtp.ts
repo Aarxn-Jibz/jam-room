@@ -97,7 +97,7 @@ export async function sendEmailSmtp(
     await expectCode(transport, [220], 'greeting');
 
     // EHLO.
-    await command(transport, 'EHLO rejoy.local', [250], 'EHLO');
+    await command(transport, 'EHLO jamroom.local', [250], 'EHLO');
 
     // AUTH LOGIN.
     await command(transport, 'AUTH LOGIN', [334], 'AUTH LOGIN');

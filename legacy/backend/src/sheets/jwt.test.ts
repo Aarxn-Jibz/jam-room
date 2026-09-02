@@ -31,7 +31,7 @@ beforeAll(async () => {
   const publicSpki = new Uint8Array((await crypto.subtle.exportKey('spki', keyPair.publicKey)) as ArrayBuffer);
 
   credentials = {
-    clientEmail: 'sheets@rejoy.example.iam.gserviceaccount.com',
+    clientEmail: 'sheets@jamroom.example.iam.gserviceaccount.com',
     privateKey: privatePem,
     tokenUri: 'https://oauth2.googleapis.com/token',
     scope: GOOGLE_SHEETS_SCOPE,

@@ -1,5 +1,5 @@
 {
-  "name": "rejoy-backend",
+  "name": "jamroom-backend",
   "main": "src/index.ts",
   "compatibility_date": "2024-06-20",
   "triggers": {
@@ -8,7 +8,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "rejoy-db",
+      "database_name": "jamroom-db",
       "database_id": "6cdf2b32-7542-43d6-a3dd-ed4415e5a182",
       "migrations_dir": "drizzle"
     }

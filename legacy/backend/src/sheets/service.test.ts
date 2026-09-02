@@ -122,7 +122,7 @@ describe('WeeklySheetService', () => {
   function envWithCreds(): SheetsEnv {
     return {
       GOOGLE_SERVICE_ACCOUNT: JSON.stringify({
-        client_email: 'sheets@rejoy.example.iam.gserviceaccount.com',
+        client_email: 'sheets@jamroom.example.iam.gserviceaccount.com',
         private_key: privatePem,
         token_uri: 'https://oauth2.googleapis.com/token',
       }),

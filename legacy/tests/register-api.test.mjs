@@ -37,7 +37,7 @@ async function main() {
   // ── Step 1: login as admin ──
   await step("POST /api/auth/login (admin)", async () => {
     const res = await api.post("/api/auth/login", {
-      email: "admin@rejoy.local",
+      email: "admin@jamroom.local",
       password: "admin123",
     });
     assert("returns 200", res.status === 200);
@@ -65,7 +65,7 @@ async function main() {
   await step("POST /api/auth/register (duplicate email)", async () => {
     const res = await api.post("/api/auth/register", {
       name: "Dup",
-      email: "admin@rejoy.local",
+      email: "admin@jamroom.local",
     });
     assert("returns 400", res.status === 400);
   });

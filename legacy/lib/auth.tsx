@@ -25,7 +25,7 @@ interface AuthContextValue {
   update: () => Promise<Session | null>;
 }
 
-const AUTH_REFRESH_EVENT = "rejoy:auth-refresh";
+const AUTH_REFRESH_EVENT = "jamroom:auth-refresh";
 
 const AuthContext = createContext<AuthContextValue>({
   data: null,

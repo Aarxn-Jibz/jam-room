@@ -4,13 +4,13 @@
  * Reads the local D1 database (used by `wrangler dev`) read-only, builds the
  * weekly grid and prints it — no network, no credentials required.
  *
- *   npm run sheets:dry-run                 # current week
- *   npm run sheets:dry-run -- 2026-08-16   # a specific Sunday / date
+ *   bun run sheets:dry-run                 # current week
+ *   bun run sheets:dry-run -- 2026-08-16   # a specific Sunday / date
  *
  * Optional `--real` performs the full export against Google Sheets using the
  * spreadsheet configured in system settings and GOOGLE_SERVICE_ACCOUNT:
  *
- *   GOOGLE_SERVICE_ACCOUNT='{...}' npm run sheets:dry-run -- --real
+ *   GOOGLE_SERVICE_ACCOUNT='{...}' bun run sheets:dry-run -- --real
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -26,7 +26,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 function findLocalD1Sqlite(): string {
   const dir = resolve(ROOT, '.wrangler/state/v3/d1');
-  if (!existsSync(dir)) throw new Error(`Local D1 state not found at ${dir}. Run 'npm run db:migrate' / start 'wrangler dev' first.`);
+  if (!existsSync(dir)) throw new Error(`Local D1 state not found at ${dir}. Run 'bun run db:migrate' / start 'wrangler dev' first.`);
   const files: string[] = [];
   const walk = (d: string) => {
     for (const entry of readdirSync(d, { withFileTypes: true })) {

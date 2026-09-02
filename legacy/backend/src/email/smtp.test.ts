@@ -52,7 +52,7 @@ describe('sendEmailSmtp', () => {
     await sendEmailSmtp(CONFIG, MAIL, transport);
 
     const commands = transport.written;
-    expect(commands[0]).toBe('EHLO rejoy.local\r\n');
+    expect(commands[0]).toBe('EHLO jamroom.local\r\n');
     expect(commands[1]).toBe('AUTH LOGIN\r\n');
     expect(commands[2]).toBe(btoa(CONFIG.username) + '\r\n');
     expect(commands[3]).toBe(btoa(CONFIG.password) + '\r\n');

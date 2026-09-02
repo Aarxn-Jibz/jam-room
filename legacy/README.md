@@ -19,24 +19,24 @@ A full-stack web application for managing music room bookings, slot requests, an
 ## Prerequisites
 
 - Node.js 20+
-- npm
+- bun
 - Wrangler CLI for local backend dev
 
 ## Getting Started
 
 ```bash
 # Install dependencies
-npm install --legacy-peer-deps
-cd backend && npm install
+bun install --legacy-peer-deps
+cd backend && bun install
 
 # Optional: configure local backend secrets (SMTP, Google Sheets)
 cp backend/.dev.vars.example backend/.dev.vars   # then fill in values
 
 # Start the backend (Cloudflare Workers local)
-cd backend && npm run dev
+cd backend && bun run dev
 
 # Start the frontend dev server
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to `/RoomBooking`. The frontend rewrites `/api/*` to the backend (default `http://localhost:8787`, override with `BACKEND_URL`).
@@ -45,45 +45,45 @@ Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to 
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@rejoy.local | admin123 |
+| Admin | admin@jamroom.local | admin123 |
 | User | (create via Register page when logged in as admin) | — |
 
 ## Available Scripts
 
-### Root (`rejoy/`)
+### Root (`jamroom/`)
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start the Next.js dev server |
-| `npm run build` | Production build |
-| `npm run start` | Start the production server |
-| `npm run lint` | Run ESLint |
-| `npm run test:api` | Run roombooking API tests (needs a running server at `BASE_URL`) |
-| `npm run test:ui` | Run all Playwright UI tests (dev server must be running) |
-| `npm run test:ui:headed` | Run Playwright UI tests with visible browser |
-| `npm run test` | Alias for `playwright test` |
+| `bun run dev` | Start the Next.js dev server |
+| `bun run build` | Production build |
+| `bun run start` | Start the production server |
+| `bun run lint` | Run ESLint |
+| `bun run test:api` | Run roombooking API tests (needs a running server at `BASE_URL`) |
+| `bun run test:ui` | Run all Playwright UI tests (dev server must be running) |
+| `bun run test:ui:headed` | Run Playwright UI tests with visible browser |
+| `bun run test` | Alias for `playwright test` |
 
-### Backend (`rejoy/backend/`)
+### Backend (`jamroom/backend/`)
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | `wrangler dev` — local Hono API on port 8787 |
-| `npm run deploy` | `wrangler deploy` — deploy the worker |
-| `npm run test` | Run the Vitest backend unit test suite |
-| `npm run test:watch` | Vitest watch mode |
-| `npm run typecheck` | `tsc --noEmit` for the backend |
-| `npm run db:generate` | Generate a Drizzle migration |
-| `npm run db:migrate` | Apply migrations to local D1 |
-| `npm run db:migrate:prod` | Apply migrations to remote D1 |
-| `npm run db:seed` | Seed local D1 with policy/rooms/admin |
-| `npm run sheets:dry-run` | Run the weekly sheet build without calling Google (test harness) |
+| `bun run dev` | `wrangler dev` — local Hono API on port 8787 |
+| `bun run deploy` | `wrangler deploy` — deploy the worker |
+| `bun run test` | Run the Vitest backend unit test suite |
+| `bun run test:watch` | Vitest watch mode |
+| `bun run typecheck` | `tsc --noEmit` for the backend |
+| `bun run db:generate` | Generate a Drizzle migration |
+| `bun run db:migrate` | Apply migrations to local D1 |
+| `bun run db:migrate:prod` | Apply migrations to remote D1 |
+| `bun run db:seed` | Seed local D1 with policy/rooms/admin |
+| `bun run sheets:dry-run` | Run the weekly sheet build without calling Google (test harness) |
 
 ## Testing
 
 ### Backend Unit Tests (Vitest)
 
 ```bash
-cd backend && npm run test    # 88 tests across 11 suites
+cd backend && bun run test    # 88 tests across 11 suites
 ```
 
 ### API Tests
@@ -91,7 +91,7 @@ cd backend && npm run test    # 88 tests across 11 suites
 Run against a running instance (dev or production). Set `BASE_URL` to point at the frontend (which proxies `/api/*` to the backend):
 
 ```bash
-npm run test:api                                 # roombooking suite
+bun run test:api                                 # roombooking suite
 node tests/slotrequests-api.test.mjs             # slot requests suite
 node tests/dashboard-api.test.mjs                # dashboard suite
 node tests/register-api.test.mjs                 # register suite
@@ -103,16 +103,16 @@ Run against production:
 BASE_URL=https://your-app.vercel.app node tests/roombooking-api.test.mjs
 ```
 
-> **Note:** The slotrequests and dashboard API suites depend on live seeded data (existing pending/approved requests, slot configs) and will report failures when the DB lacks that state. Only the roombooking suite is wired to `npm run test:api`.
+> **Note:** The slotrequests and dashboard API suites depend on live seeded data (existing pending/approved requests, slot configs) and will report failures when the DB lacks that state. Only the roombooking suite is wired to `bun run test:api`.
 
 ### UI Tests (Playwright)
 
 Requires a running dev server:
 
 ```bash
-npm run dev &
-npm run test:ui          # All UI tests
-npm run test:ui:headed   # Visible browser
+bun run dev &
+bun run test:ui          # All UI tests
+bun run test:ui:headed   # Visible browser
 ```
 
 Run specific project:
@@ -264,7 +264,7 @@ configuration is required.
 2. In the frontend project, build with that URL supplied at build time:
 
    ```bash
-   BACKEND_URL=https://rejoy-backend.<your-subdomain>.workers.dev npm run build:vinext
+   BACKEND_URL=https://jamroom-backend.<your-subdomain>.workers.dev bun run build:vinext
    ```
 
 3. Set the same strong `JWT_SECRET` used by the backend as a frontend Worker
@@ -277,14 +277,14 @@ configuration is required.
 4. Deploy the generated frontend Worker:
 
    ```bash
-   npm run deploy:vinext
+   bun run deploy:vinext
    ```
 
 The resulting `https://swo-website.<your-subdomain>.workers.dev` URL is the
 site visitors open. It serves the existing UI and forwards `/api/*` internally
 to the backend; do not point browser code directly at the backend URL.
 
-For local Workers development, use `npm run dev:vinext` and set
+For local Workers development, use `bun run dev:vinext` and set
 `BACKEND_URL=http://localhost:8787` in the command environment.
 
 Set `JWT_SECRET` as a Worker secret on the backend as well. It must be the same
@@ -298,7 +298,7 @@ one-minute window).
 1. Push to GitHub and import the repo into Vercel
 2. Set environment variables in Vercel dashboard:
    - `BACKEND_URL` — deployed Hono/Cloudflare Workers URL (default `http://localhost:8787`)
-3. Deploy — Vercel detects Next.js automatically and runs `npm install --legacy-peer-deps` (via `vercel.json`)
+3. Deploy — Vercel detects Next.js automatically and runs `bun install --legacy-peer-deps` (via `vercel.json`)
 
 ### Backend Environment Variables (`backend/.dev.vars` locally, Worker secrets in Cloudflare)
 

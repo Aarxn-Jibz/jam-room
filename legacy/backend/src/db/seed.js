@@ -18,7 +18,7 @@ function productionAdmin() {
   if (!process.argv.includes('--remote')) {
     return {
       username: 'admin',
-      email: 'admin@rejoy.local',
+      email: 'admin@jamroom.local',
       password: 'admin123',
     };
   }

@@ -785,7 +785,7 @@ Each `*-api.test.mjs` file uses `axios` with `validateStatus: () => true` (never
 | Dashboard | `dashboard-api.test.mjs` | Slot config CRUD, validation, 404 handling |
 | Register | `register-api.test.mjs` | User CRUD, band CRUD, user-profile relationships |
 
-> **Note:** the slotrequests and dashboard suites depend on live seeded data (pending/approved requests, existing slot configs) and report failures when that state is absent. Only `roombooking-api.test.mjs` is wired to `npm run test:api`.
+> **Note:** the slotrequests and dashboard suites depend on live seeded data (pending/approved requests, existing slot configs) and report failures when that state is absent. Only `roombooking-api.test.mjs` is wired to `bun run test:api`.
 
 ### API Test Pattern
 
@@ -820,17 +820,17 @@ await test("GET /api/rooms returns rooms", async () => {
 
 ```bash
 # Backend unit tests
-cd backend && npm run test
+cd backend && bun run test
 
 # API tests (any running instance)
-npm run test:api                               # roombooking tests
+bun run test:api                               # roombooking tests
 node tests/slotrequests-api.test.mjs           # slot requests tests
 node tests/dashboard-api.test.mjs              # dashboard tests
 node tests/register-api.test.mjs               # register tests
 
 # UI tests (require dev server)
-npm run dev &                                  # Start server
-npm run test:ui                                # All UI tests
+bun run dev &                                  # Start server
+bun run test:ui                                # All UI tests
 npx playwright test --project=roombooking      # Single project
 npx playwright test --headed                    # Visible browser
 
@@ -858,7 +858,7 @@ BASE_URL=https://your-app.vercel.app node tests/roombooking-api.test.mjs
   "framework": "nextjs",
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "bun install --legacy-peer-deps"
 }
 ```
 
@@ -897,7 +897,7 @@ export { schema };
 ### Build Command
 
 ```bash
-npm install --legacy-peer-deps   # --legacy-peer-deps required for React 19 RC peer conflicts
+bun install --legacy-peer-deps   # --legacy-peer-deps required for React 19 RC peer conflicts
 npx next build                    # Production build
 ```
 
@@ -970,7 +970,7 @@ await this.db.batch([
 
 **Problem:** `eslint.config.mjs` uses `FlatCompat` to bridge old-style `.eslintrc` configs. Next.js's ESLint runner passes `useEslintrc` and `extensions` options valid only for ESLint 8, which fail against ESLint 9's flat config format.
 
-**Solution:** `eslint: { ignoreDuringBuilds: true }` in `next.config.ts`. Linting runs separately via `npm run lint` with the same config, which works correctly when invoked directly.
+**Solution:** `eslint: { ignoreDuringBuilds: true }` in `next.config.ts`. Linting runs separately via `bun run lint` with the same config, which works correctly when invoked directly.
 
 ---
 
@@ -1115,29 +1115,29 @@ When approving or editing a booking, the service re-runs the active-conflict che
 
 | Script | What It Does | Notes |
 |--------|-------------|-------|
-| `npm run dev` | `next dev` — starts dev server |
-| `npm run build` | `next build` — production build | ESLint ignored via `next.config.ts` (see 13.8) |
-| `npm run start` | `next start` — starts production server |
-| `npm run lint` | `next lint` — runs ESLint | Works standalone despite the build flag |
-| `npm run test:api` | Runs the roombooking API suite (`node tests/roombooking-api.test.mjs`) | Other `*-api` suites must be run individually |
-| `npm run test:ui` | `playwright test` — runs all UI projects |
-| `npm run test:ui:headed` | `playwright test --headed` — visible browser |
-| `npm run test` | Alias for `playwright test` |
+| `bun run dev` | `next dev` — starts dev server |
+| `bun run build` | `next build` — production build | ESLint ignored via `next.config.ts` (see 13.8) |
+| `bun run start` | `next start` — starts production server |
+| `bun run lint` | `next lint` — runs ESLint | Works standalone despite the build flag |
+| `bun run test:api` | Runs the roombooking API suite (`node tests/roombooking-api.test.mjs`) | Other `*-api` suites must be run individually |
+| `bun run test:ui` | `playwright test` — runs all UI projects |
+| `bun run test:ui:headed` | `playwright test --headed` — visible browser |
+| `bun run test` | Alias for `playwright test` |
 
 ### Backend Scripts (`backend/`)
 
 | Script | What It Does |
 |--------|-------------|
-| `npm run dev` | Starts the Hono API locally via `wrangler dev` |
-| `npm run deploy` | Deploys the Worker via `wrangler deploy` |
-| `npm run db:generate` | Generates a new Drizzle migration |
-| `npm run db:migrate` | Applies migrations to the local D1 database |
-| `npm run db:migrate:prod` | Applies migrations to the remote D1 database |
-| `npm run db:seed` | Seeds the local D1 database (admin user, rooms, slot configs, test data) via `tsx` |
-| `npm run sheets:dry-run` | Runs the weekly Google Sheets export against a fixture file (no live API calls) |
-| `npm run typecheck` | `tsc --noEmit` — type-checks the backend |
-| `npm run test` | Runs the Vitest suite (backend unit tests) |
-| `npm run test:watch` | `vitest` — runs unit tests in watch mode |
+| `bun run dev` | Starts the Hono API locally via `wrangler dev` |
+| `bun run deploy` | Deploys the Worker via `wrangler deploy` |
+| `bun run db:generate` | Generates a new Drizzle migration |
+| `bun run db:migrate` | Applies migrations to the local D1 database |
+| `bun run db:migrate:prod` | Applies migrations to the remote D1 database |
+| `bun run db:seed` | Seeds the local D1 database (admin user, rooms, slot configs, test data) via `tsx` |
+| `bun run sheets:dry-run` | Runs the weekly Google Sheets export against a fixture file (no live API calls) |
+| `bun run typecheck` | `tsc --noEmit` — type-checks the backend |
+| `bun run test` | Runs the Vitest suite (backend unit tests) |
+| `bun run test:watch` | `vitest` — runs unit tests in watch mode |
 
 ---
 

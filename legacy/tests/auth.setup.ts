@@ -1,6 +1,6 @@
 import { test as setup, expect } from "@playwright/test";
 
-const adminEmail = "admin@rejoy.local";
+const adminEmail = "admin@jamroom.local";
 const adminPassword = "admin123";
 
 setup("authenticate as admin", async ({ page }) => {
