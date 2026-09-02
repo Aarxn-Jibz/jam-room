@@ -3,11 +3,11 @@ import './App.css'
 import { AuthModal } from './components/AuthModal'
 import { RequestsScreen } from './components/RequestsScreen'
 import { DashboardScreen } from './components/DashboardScreen'
-import { RegisterScreen } from './components/RegisterScreen'
 import { BookingRequestModal } from './components/BookingRequestModal'
 import { PasswordChangeModal } from './components/PasswordChangeModal'
+import { ManagementScreen } from './components/ManagementScreen'
 
-type Page = 'booking' | 'requests' | 'dashboard' | 'register'
+type Page = 'booking' | 'requests' | 'dashboard' | 'manage'
 type Room = { id: string; number: number; name?: string }
 type SlotConfig = { id: string; start_time: string; end_time: string; enabled: boolean }
 type Booking = { id: string; slot_start: string; slot_end: string; band_name?: string }
@@ -41,7 +41,7 @@ export default function App() {
       <button className="identity" onClick={() => setView('booking')} aria-label="Jamroom home"><span className="identity-mark">J</span><span>JAMROOM</span></button>
       <button className="menu-toggle" onClick={() => setMenuOpen(open => !open)} aria-expanded={menuOpen} aria-label="Toggle navigation"><i /><i /><i /></button>
       <nav className={menuOpen ? 'nav nav--open' : 'nav'}>
-        {([['booking', 'Room Booking'], ['requests', 'Slot Requests'], ['dashboard', 'Dashboard'], ['register', 'Register']] as [Page, string][]).map(([key, label]) => <button key={key} className={page === key ? 'active' : ''} onClick={() => setView(key)}>{label}</button>)}
+        {([['booking', 'Room Booking'], ['requests', 'Slot Requests'], ['dashboard', 'Dashboard'], ['manage', 'People']] as [Page, string][]).map(([key, label]) => <button key={key} className={page === key ? 'active' : ''} onClick={() => setView(key)}>{label}</button>)}
         <button className="login" onClick={user ? logout : () => setLoginOpen(true)}>{user ? 'Logout' : 'Login'}</button>
       </nav>
     </header>
@@ -58,7 +58,7 @@ export default function App() {
         <div className="mobile-slots">{slots.map(slot => { const day = days[mobileDay]; const booking = bookingAt(day, slot); return <button key={slot.id} className={booking ? 'mobile-slot mobile-slot--booked' : 'mobile-slot'} onClick={() => selectSlot(day, slot, booking)}><span>{labelTime(slot.start_time)} – {labelTime(slot.end_time)}</span><b>{booking ? (booking.band_name ?? 'Booked') : 'Available'}</b></button> })}</div>
         <footer className="schedule-footer"><span><i className="legend available" /> Available</span><span><i className="legend booked" /> Reserved</span><span>Room {roomNumber} · Select an available slot to request it</span></footer>
       </section>
-    </section> : page === 'requests' ? <RequestsScreen signedIn={Boolean(user)} admin={user?.role === 'admin'} /> : page === 'dashboard' ? <DashboardScreen admin={user?.role === 'admin'} /> : <RegisterScreen admin={user?.role === 'admin'} />}</main>
+    </section> : page === 'requests' ? <RequestsScreen signedIn={Boolean(user)} admin={user?.role === 'admin'} /> : page === 'dashboard' ? <DashboardScreen admin={user?.role === 'admin'} /> : <ManagementScreen admin={user?.role === 'admin'} />}</main>
     <AuthModal open={loginOpen} onClose={() => setLoginOpen(false)} onSuccess={setUser} />
     <PasswordChangeModal open={Boolean(user?.mustChangePassword)} onChanged={() => setUser(current => current ? { ...current, mustChangePassword: false } : current)} />
     <BookingRequestModal open={Boolean(selection)} onClose={() => setSelection(null)} date={selection?.date ?? null} startTime={selection?.slot.start_time ?? ''} endTime={selection?.slot.end_time ?? ''} roomId={rooms.find(room => room.number === roomNumber)?.id} user={user} onCreated={() => { setNotice('Your booking request was submitted.'); setWeek(new Date(week)) }} />
