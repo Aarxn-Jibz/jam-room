@@ -9,6 +9,14 @@ bun install
 bun run dev
 ```
 
+On a new local checkout, initialize the Worker database once before starting the app:
+
+```bash
+bun run db:setup:local
+```
+
+This creates the schema and idempotent development data. The local administrator is `aaron@admin.com` / `12345678`.
+
 The frontend calls relative `/api/*` URLs. During local development the Cloudflare Vite plugin serves the Worker alongside the app; in production, the deployed Worker serves the built frontend and handles `/api/*` itself. This keeps every browser request same-origin, so no CORS configuration is needed.
 
 ## Build and deploy

@@ -9,15 +9,24 @@
     "lint": "oxlint",
     "preview": "bun run build && vite preview",
     "deploy": "bun run build && wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply jamroom-db --local",
+    "db:seed:local": "wrangler d1 execute jamroom-db --local --file=drizzle/seed.sql",
+    "db:setup:local": "bun run db:migrate:local && bun run db:seed:local"
   },
   "dependencies": {
+    "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
+    "framer-motion": "^13.2.0",
     "hono": "^4.13.5",
     "jose": "^6.2.10",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
@@ -27,7 +36,10 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "autoprefixer": "^10.5.4",
     "oxlint": "^1.79.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "3.4.17",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "wrangler": "^4.128.0"

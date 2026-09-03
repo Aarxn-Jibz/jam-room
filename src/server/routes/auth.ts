@@ -63,7 +63,7 @@ authRoutes.post('/register', async c => {
   const auth = await authenticated(c); if (!auth || auth.user.role !== 'ADMIN') return c.json({ error: 'Forbidden' }, 403)
   const parsed = registerSchema.safeParse(await c.req.json().catch(() => ({}))); if (!parsed.success) return c.json({ error: 'Validation failed' }, 400)
   const db = getDb(c.env.DB); const email = parsed.data.email.toLowerCase(); if ((await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1))[0]) return c.json({ error: 'User already exists' }, 409)
-  const now = Date.now(); const id = crypto.randomUUID(); const user = { id, username: email, email, name: parsed.data.name, passwordHash: await hash(parsed.data.password ?? 'changeit', await genSalt(10)), role: 'USER' as const, mustChangePassword: true, active: true, createdAt: now, updatedAt: now }
+  const now = Date.now(); const id = crypto.randomUUID(); const user = { id, username: email, email, name: parsed.data.name, passwordHash: await hash(parsed.data.password ?? 'changeit', await genSalt(10)), role: parsed.data.role === 'admin' ? 'ADMIN' as const : 'USER' as const, mustChangePassword: true, active: true, createdAt: now, updatedAt: now }
   await db.insert(schema.users).values(user); if (parsed.data.bandIds?.length) await db.insert(schema.userProfiles).values(parsed.data.bandIds.map(profileId => ({ userId: id, profileId }))).onConflictDoNothing()
   return c.json({ message: 'User registered successfully', user: asUser(user, await profilesFor(db, id)) }, 201)
 })

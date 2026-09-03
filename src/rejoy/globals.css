@@ -2,18 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Geist';
-  src: url('./rejoy/assets/GeistVF.woff') format('woff');
-  font-weight: 100 900;
-}
-
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('./rejoy/assets/GeistMonoVF.woff') format('woff');
-  font-weight: 100 900;
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -84,7 +72,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Geist', sans-serif;
   }
   button {
     @apply active:outline-none;
@@ -128,3 +115,4 @@ video {
 .scroll-hint.is-scrolled::after {
   opacity: 1;
 }
+
